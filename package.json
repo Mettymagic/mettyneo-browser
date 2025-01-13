@@ -1,0 +1,17 @@
+{
+  "name": "mettyneo",
+  "version": "1.0.0",
+  "description": "Adds a variety of UI features and improvements to Neopets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bootstrap": "^5.3.3",
+    "jquery": "^3.7.1",
+    "web-ext": "^8.3.0",
+    "webextension-polyfill": "^0.12.0"
+  }
+}
