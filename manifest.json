@@ -1,20 +1,58 @@
 {
     "manifest_version": 3,
     "name": "MettyNeo",
-    "version": "2025.1.12",
+    "version": "1.0",
     "description": "Adds a variety of UI features and improvements to Neopets",
+    "homepage_url": "https://mettymagic.neocities.org/",
+
     "action": {
-        "default_popup": "popup.html",
+        "default_title": "MettyNeo",
+        "default_popup": "src/popup/mn-popup.js",
         "default_icon": {
-            "16": "images/icon16.png",
-            "48": "images/icon48.png",
-            "128": "images/icon128.png"
+            "16": "icons/mn_icon-16.png",
+            "32": "icons/mn_icon-32.png",
+            "48": "icons/mn_icon-48.png",
+            "128": "icons/mn_icon-128.png" 
         }
     },
+
     "content_scripts": [
         {
-            "matches": ["*://*neopets.com*"],
-            "js": ["src/neopets/mn-neo.js"]
+            "matches": ["*://*neopets.com/*"],
+            "js": [
+                "src/neopets/mn-neo.js",
+                "browser-polyfill.js"
+            ]
         }
+    ],
+
+    "icons": { 
+        "16": "icons/mn_icon-16.png",
+        "32": "icons/mn_icon-32.png",
+        "48": "icons/mn_icon-48.png",
+        "128": "icons/mn_icon-128.png" 
+    },
+
+    "background": {
+        "scripts": ["browser-polyfill.js", "background.js"]
+    },
+
+    "web_accessible_resources": [
+        {
+            "resources": ["src/neo/*"],
+            "matches": ["*://*neopets.com/*"]
+        }
+    ],
+
+    "permissions": [
+        
+    ],
+
+    "host_permissions": [
+        "*://*neopets.com/*",
+        "*://*neofood.club/*",
+        "*://*jellyneo.net/*",
+        "*://*thedailyneopets.com/*",
+        "*://*itemdb.com.br/*"
     ]
 }
