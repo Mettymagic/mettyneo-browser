@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MettyNeo",
-  "version": "2025.1.12,
+  "version": "2025.1.12",
   "description": "Adds a variety of UI features and improvements to Neopets",
   "action": {
     "default_popup": "popup.html",
@@ -10,11 +10,11 @@
       "48": "images/icon48.png",
       "128": "images/icon128.png"
     }
-  }
+  },
   "content_scripts": [
     {
         "matches": ["*://*neopets.com*"],
-        "js": ["mn_neo.js"]
+        "js": ["src/neopets/mn-neo.js"]
     }
   ]
 }
