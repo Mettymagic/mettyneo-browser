@@ -18,10 +18,10 @@
 
     "content_scripts": [
         {
-            "matches": ["*://*neopets.com/*"],
+            "matches": ["*://*.neopets.com/*", "*://neopets.com/*"],
             "js": [
-                "src/neopets/mn-neo.js",
-                "browser-polyfill.js"
+                "node_modules/webextension-polyfill/dist/browser-polyfill.js",
+                "src/neo/mn-neo.js"
             ]
         }
     ],
@@ -34,25 +34,29 @@
     },
 
     "background": {
-        "scripts": ["browser-polyfill.js", "background.js"]
+        "scripts": [
+            "node_modules/webextension-polyfill/dist/browser-polyfill.js", 
+            "background.js"
+        ]
     },
 
     "web_accessible_resources": [
         {
             "resources": ["src/neo/*"],
-            "matches": ["*://*neopets.com/*"]
+            "matches": ["*://*.neopets.com/*", "*://neopets.com/*"]
         }
     ],
 
     "permissions": [
-        
+        "activeTab",
+        "clipboardRead"
     ],
 
     "host_permissions": [
-        "*://*neopets.com/*",
-        "*://*neofood.club/*",
-        "*://*jellyneo.net/*",
-        "*://*thedailyneopets.com/*",
-        "*://*itemdb.com.br/*"
+        "*://*.neopets.com/*", "*://neopets.com/*",
+        "*://*.neofood.club/*", "*://neofood.club/*",
+        "*://*.jellyneo.net/*",  "*://jellyneo.net/*",
+        "*://*.thedailyneopets.com/*", "*://thedailyneopets.com/*",
+        "*://*.itemdb.com.br/*", "*://itemdb.com.br/*"
     ]
 }
