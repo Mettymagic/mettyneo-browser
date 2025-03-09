@@ -3,3 +3,4 @@
 // Labels essentially function as 
 
 console.log("boop!")
+console.log(isBeta())

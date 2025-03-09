@@ -20,7 +20,8 @@
         {
             "matches": ["*://*.neopets.com/*", "*://neopets.com/*"],
             "js": [
-                "node_modules/webextension-polyfill/dist/browser-polyfill.js",
+                "node_modules/jquery/dist/jquery.min.js",
+                "node_modules/webextension-polyfill/dist/browser-polyfill.min.js",
                 "src/neo/mn-neo.js"
             ]
         }
@@ -35,9 +36,13 @@
 
     "background": {
         "scripts": [
-            "node_modules/webextension-polyfill/dist/browser-polyfill.js", 
-            "background.js"
-        ]
+            "node_modules/jquery/dist/jquery.min.js",
+            "node_modules/webextension-polyfill/dist/browser-polyfill.min.js",
+            "node_modules/content-scripts-register-polyfill/index.js",
+            "src/neo/mn-bg.js"
+        ],
+        "service_worker": "src/neo/mn-bg.js",
+        "persistent": false
     },
 
     "web_accessible_resources": [
@@ -49,7 +54,9 @@
 
     "permissions": [
         "activeTab",
-        "clipboardRead"
+        "clipboardRead",
+        "scripting",
+        "userScripts"
     ],
 
     "host_permissions": [
