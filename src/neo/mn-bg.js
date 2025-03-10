@@ -8,3 +8,4 @@ function onMessage(msg) {
         }, 1000);
       });
 }
+//console.log(browser.scripting.registerContentScripts)
