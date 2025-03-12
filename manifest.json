@@ -20,8 +20,9 @@
         {
             "matches": ["*://*.neopets.com/*", "*://neopets.com/*"],
             "js": [
-                "node_modules/webextension-polyfill/dist/browser-polyfill.min.js",
-                "src/neo/mn-neo.js"
+                "external/browser-polyfill.min.js",
+                "external/jquery.min.js",
+                "src/content.js"
             ]
         }
     ],
@@ -34,34 +35,36 @@
     },
 
     "background": {
-        "scripts": [
-            "node_modules/webextension-polyfill/dist/browser-polyfill.min.js",
-            "node_modules/jquery/dist/jquery.min.js",
-            "src/common.js",
-            "src/neo/mn-bg.js"
-        ],
-        "service_worker": "mn-bg.js",
+        "scripts": ["src/background.js"],
+        "service_worker": "src/background.js",
         "type": "module"
     },
 
+    "permissions": [
+        "notifications",
+        "clipboardWrite",
+        "clipboardRead",
+        "idle",
+        "tabs",
+        "storage",
+        "unlimitedStorage",
+        "cookies",
+        "webRequest",
+        "webNavigation",
+        "userScripts",
+        "declarativeNetRequest"
+    ],
+
+    "optional_permissions": [
+        "userScripts"
+    ],
+
+    "host_permissions": ["<all_urls>"],
+
     "web_accessible_resources": [
         {
-            "resources": ["src/neo/*"],
-            "matches": ["*://*.neopets.com/*", "*://neopets.com/*"]
+        "resources": ["*"],
+        "matches": ["<all_urls>"]
         }
-    ],
-
-    "permissions": [
-        "activeTab",
-        "clipboardRead",
-        "scripting"
-    ],
-
-    "host_permissions": [
-        "*://*.neopets.com/*", "*://neopets.com/*",
-        "*://*.neofood.club/*", "*://neofood.club/*",
-        "*://*.jellyneo.net/*",  "*://jellyneo.net/*",
-        "*://*.thedailyneopets.com/*", "*://thedailyneopets.com/*",
-        "*://*.itemdb.com.br/*", "*://itemdb.com.br/*"
     ]
 }
