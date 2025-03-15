@@ -1,15 +1,17 @@
-// ==MettyNeo Script==
+// ==MettyNeo Userscript==
 // @name        name
 // @version     num.num
-// @id          id
-// @desc        desc
 // @author      author
+// @desc        desc
+// @package     name
+// @id          id
 // @icon        image_url
 // @match       page_url
 // @run-at      document-start
 // @requires    js_url
 // @requires    id
-// ==/MettyNeo Script==
+// @requires    package
+// ==/MettyNeo Userscript==
 
 // Calls label scripts depending on the page.
 // Labels are mettyneo classes added to elements that are unique and used in place of other identifiers.
