@@ -6,7 +6,7 @@
 // @package     name
 // @id          id
 // @icon        image_url
-// @match       page_url
+// @match       http://*.*/foo*
 // @run-at      document-start
 // @requires    js_url
 // @requires    id
