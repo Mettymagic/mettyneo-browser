@@ -1,20 +1,15 @@
 // ==MettyNeo Userscript==
-// @name        name
-// @version     num.num
-// @author      author
-// @desc        desc
-// @package     name
-// @id          id
+// @name        Neopets Labeller
+// @version     0.1
+// @author      Mettymagic
+// @desc        Labels different elements of different pages for convenience
+// @package     core
+// @id          neo-label
 // @icon        image_url
-// @match       http://*.*/foo*
+// @match       *.neopets.com/* //todo change later
 // @run-at      document-start
-// @requires    js_url
-// @requires    id
-// @requires    package
+// @requires    https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
 // ==/MettyNeo Userscript==
 
 // Calls label scripts depending on the page.
 // Labels are mettyneo classes added to elements that are unique and used in place of other identifiers.
-// Labels essentially function as 
-
-// NOTE: If you want things to be usable by other scripts, remember to export! Things are private by default!
