@@ -1,0 +1,1 @@
+// Handles individual userscript storage similar to Tampermonkey

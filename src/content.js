@@ -1,3 +1,1 @@
-loadjscssfile(browser.runtime.getURL("src/foo.js"), function() {
-    loadjscssfile(browser.runtime.getURL("src/test.js"), function() {})
-})
+// Communicates with background to determine if and when scripts should be injected
