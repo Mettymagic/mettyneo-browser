@@ -1,4 +1,4 @@
-class Script {
+const Script = class {
     get id() { return metadata.id }
     match = []
     requires = {
@@ -31,4 +31,4 @@ const RunAt = Object.freeze({
     DOCUMENT_IDLE: "document_idle"      //document-idle
 })
 
-export { default as Script, RunAt }
+export {Script as default, RunAt }

@@ -1,7 +1,6 @@
-import * as parser from "./modules/parser.md.js"
-import * as storage from "./modules/storage.md.js"
-import * as sandbox from "./modules/sandbox.md.js"
-import registry from "./modules/registry.md.js"
+import parser from "./modules/parser.md.js"
+
+console.log(await parser.readLocal("src/scripts/core/neo-label.mn.js"))
 
 //sends message to runtime, telling it to executeScript
 

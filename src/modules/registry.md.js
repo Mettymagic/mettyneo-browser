@@ -2,27 +2,27 @@
 const registry = {
     key: "scripts",
     get storage() { 
-        return browser.storage.local.get(key) 
+        return browser.storage.local.get(this.key) 
     },
     set storage(x) { 
         try {
             var obj = {}
-            obj[key] = x
+            obj[this.key] = x
             browser.storage.local.set(obj) 
         } catch(err) {
-            console.error(`Failed to set '${key}' storage: ${err}`)
+            console.error(`Failed to set '${this.key}' storage: ${err}`)
         }
     },
-    update(newStorage) { storage = newStorage},
+    update(newStorage) { this.storage = newStorage},
 
-    has(id) { return id in storage },
+    has(id) { return id in this.storage },
     
     register(script) {
         try {
-            var stor = storage
+            var stor = this.storage
             if (!(script.id in stor)) { 
                 stor[script.id] = script 
-                update(stor)
+                this.update(stor)
                 console.log(`Script '${script.id}' registered.`)
             }
             else { console.error(`Failed to register script: ID '${script.id}' already registered.`) }
@@ -33,10 +33,10 @@ const registry = {
     
     unregister(id) {
         try {
-            var stor = storage
+            var stor = this.storage
             if (id in stor) { 
                 delete stor[id]
-                update(stor)
+                this.update(stor)
             }
             else { console.error(`Failed to unregister script: ID '${id}' does not exist.`) }
 
@@ -46,7 +46,7 @@ const registry = {
     }
 }
 
-export { default as registry}
+export {registry as default}
 
 /*
 browser.runtime.onStartup.addListener(()=>{
