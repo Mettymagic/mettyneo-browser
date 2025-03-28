@@ -1,45 +1,51 @@
 // Persistent registry of enabled userscripts and their metadata
 const registry = {
     key: "scripts",
+    // Async getter
     get storage() { 
         return browser.storage.local.get(this.key) 
     },
-    set storage(x) { 
-        try {
-            var obj = {}
-            obj[this.key] = x
-            browser.storage.local.set(obj) 
-        } catch(err) {
-            console.error(`Failed to set '${this.key}' storage: ${err}`)
-        }
+    // Async setter
+    async update(newStorage) { 
+        var obj = {}
+        obj[this.key] = newStorage
+        return browser.storage.local.set(obj)
     },
-    update(newStorage) { this.storage = newStorage},
-
-    has(id) { return id in this.storage },
-    
-    register(script) {
-        try {
-            var stor = this.storage
-            if (!(script.id in stor)) { 
-                stor[script.id] = script 
-                this.update(stor)
-                console.log(`Script '${script.id}' registered.`)
+    // Async includes
+    async has(val) { 
+        return this.storage.then(
+            (stor) => { 
+                // if string is given, check if contains key, otherwise check if contains value
+                return (val instanceof String) ? id in stor : Object.values(stor).includes(val)
             }
-            else { console.error(`Failed to register script: ID '${script.id}' already registered.`) }
+        )
+    },
+    async clear() { return browser.storage.local.remove(this.key) },
+    
+    // Async append
+    async register(script) {
+        try {
+            if(await this.has(script)) {
+                stor[script.id] = script
+                return this.update(stor).then(() => {
+                    console.log(`Script '${script.id}' registered.`)
+                })
+            }
+            else console.error(`Failed to register script: ID '${script.id}' already registered.`)
         } catch(err) {
             console.error(`Failed to register script: ${err}`)
         }
     },
     
-    unregister(id) {
+    // Async remove
+    async unregister(id) {
         try {
-            var stor = this.storage
+            var stor = await this.storage
             if (id in stor) { 
                 delete stor[id]
-                this.update(stor)
+                return this.update(stor)
             }
             else { console.error(`Failed to unregister script: ID '${id}' does not exist.`) }
-
         } catch(err) {
             console.error(`Failed to unregister script: ${err}`)
         }

@@ -1,16 +1,12 @@
 // uses storage.sync
-const settings = {
+class Settings {
+    save() {
 
+    }
+    
+    update() {
+    
+    }
 }
 
-function load() {
-
-}
-
-save() {
-
-}
-
-update() {
-
-}
+export { Settings as default }

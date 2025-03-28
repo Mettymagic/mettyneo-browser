@@ -1,5 +1,6 @@
-const Script = class {
-    get id() { return metadata.id }
+const ScriptObject = class {
+    get id() { return this.metadata.id }
+    get name() { return this.metadata.name }
     match = []
     requires = {
         url:[], 
@@ -22,13 +23,4 @@ const Script = class {
     }
 }
 
-const RunAt = Object.freeze({
-    //before DOM loads
-    DOCUMENT_START: "document_start",   //document-start
-    //after DOM loads but before resources load
-    DOCUMENT_END: "document_end",       //document-end
-    //after DOM and resources load, default
-    DOCUMENT_IDLE: "document_idle"      //document-idle
-})
-
-export {Script as default, RunAt }
+export {ScriptObject as default}

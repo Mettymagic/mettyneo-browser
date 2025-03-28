@@ -1,11 +1,12 @@
 import registry from "./registry.md.js"
-import Script, {RunAt} from "./script-metadata.md.js"
+import Script from "./script-object.md.js"
 
 // Collection of regex used
 const regexHeader =     /^(\/\/\s*==(.*)==.*\/\/\s*==\/(.*)==)\s*(.*)$/is
 const regexData =       /^\/\/\s*(@[\w-]*)\s*(.*)\s*$/igm
 const regexVersion =    /\d+(?:[\.-]\d+)*/
 const regexMatchURL = /^\*$|(?:(\*.|https?:\/\/|\*:\/\/)(.*?)(?:\/(.+))?$)/igm
+const regexRunAt = /document[-_](?:start|end|idle)/igm
 
 // Enum representing error status
 const Status = Object.freeze({
@@ -15,18 +16,107 @@ const Status = Object.freeze({
 })
 
 // Collection of metadata tags and any associated parse logic with it.
-// Stored as a dictionary of tag : ()
+// Stored as a dictionary of tag : async function(val, script)
 const metadataParser = {
-    strTags : [
-        "name",
-        "description",
-        "author"
-    ],
-    addTags(list) {
-        for(const tag of list) this.tags[tag] = this.defaultTagHandler(tag)
-        return this
-    },
     has(tag) { return tag in this.tags },
+
+    parseLine(script, tag, val) {
+        // skip if we don't read the tag
+        if (!this.has(tag)) return Status.IGNORED
+        const parser = tags[tag]
+        const v = parser.multiword ? this.trimValue(val) : val.trim()
+        const status = parser?.test(val) || Status.SUCCESS
+        if (status == Status.SUCCESS) script.metadata[tag] = v
+        return status
+    },
+    
+    tags : {
+        "name" : {
+            multiword: true
+        },
+        "description" : {
+            multiword: true
+        },
+        "author" : {
+            multiword: true
+        },
+        "icon" : {
+            test: metadataParser.matchURL(),
+        }, 
+        "package" : {},
+        "id" : {
+            test: async (val) => {
+                if (await registry.has(val)) {
+                    console.error("Invalid @id, ID is already used.")
+                    return Status.ERRORED
+                }
+                return Status.SUCCESS
+            }
+        },
+        "version" : {
+            test: async (val) => { 
+                if (!regexVersion.test(val)) {
+                    console.error("Invalid @version number detected.")
+                    return Status.ERRORED
+                }
+                return Status.SUCCESS
+            },
+        },
+        "run-at": {
+            test: async (val) => {
+                if (!regexRunAt.test(val)) {
+                    console.error(`Invalid @run-at value '${val}' detected.`)
+                    return Status.ERRORED
+                }
+                return Status.SUCCESS
+            }
+        },
+        "match": {
+            test: async (val) => {
+                if(!matchURL(val)) {
+                    console.error(`Invalid @match url '${val}' detected.`)
+                    return Status.ERRORED
+                }
+                if(val in script.match) {
+                    console.warning(`Duplicate @match url '${val}' detected, ignored.`)
+                    return Status.IGNORED
+                }
+                return Status.SUCCESS
+            }
+        },
+        "requires": {
+            test: async (val, script) => {
+                const split = val.split(/:(.*)/s)
+                const k = split[0]
+                const v = split[1]
+                switch(k) {
+                    // requires script id
+                    case "id":
+                        if(v in script.required.id) {
+                            console.warning(`Duplicate @requires '${val}' detected, ignored`)
+                            return Status.IGNORED
+                        }
+                        break
+                    // requires package id
+                    case "package":
+                        if(v in script.required.package) {
+                            console.warning(`Duplicate @requires '${val}' detected, ignored`)
+                            return Status.IGNORED
+                        }
+                        break
+                    // requires url
+                    default:
+                        if (!matchURL(val)) {
+                            console.error("Invalid @requires url '"+val+"'.")
+                            return Status.INVALID
+                        } 
+                        break
+                }
+                return Status.SUCCESS
+            }
+        }
+    },
+
     trimValue(tag, val) {
         const noComment = val.replace(/\s+\/\/.*/gm, "")
         if (this.strTags.includes(tag)) return noComment
@@ -35,86 +125,8 @@ const metadataParser = {
             if (split.length > 1) console.warn(`Tag @${tag} contains more than 1 word, other words ignored.`)
             return split[0]
         }
-    },
-    tags : {
-        "id" : (val, script) => {
-            if (registry.has(val)) {
-                console.error("Invalid @id, ID is already used.")
-                return Status.ERRORED
-            }
-            return metadataParser.defaultTagHandler("id")(val, script)
-        },
-        "version" : (val, script) => { 
-            if (!regexVersion.test(val)) {
-                console.error("Invalid @version number detected.")
-                return Status.ERRORED
-            }
-            return metadataParser.defaultTagHandler("version")(val, script)
-        },
-        "run-at": (val, script) => {
-            const str = val.toUpperCase().replace("-","_")
-            var i = Object.keys(RunAt).find( (e) => e == str )
-            if (!i) {
-                console.error(`Invalid @run-at value '${val}' detected.`)
-                return Status.ERRORED
-            }
-            return metadataParser.defaultTagHandler("run-at")(val, script)
-        },
-        "match": (val, script) => {
-            if(!isValidURLPattern(val)) {
-                console.error(`Invalid @match url '${val}' detected.`)
-                return Status.ERRORED
-            }
-            if(val in script.match) {
-                console.warning(`Duplicate @match url '${val}' detected, ignored.`)
-                return Status.IGNORED
-            }
-            script.match.push(val)
-            return Status.SUCCESS
-        },
-        "requires": (val, script) => {
-            const split = val.split(/:(.*)/s)
-            const k = split[0]
-            const v = split[1]
-            switch(k) {
-                // requires script id
-                case "id":
-                    if(v in script.required.id) {
-                        console.warning(`Duplicate @requires '${val}' detected, ignored`)
-                        return Status.IGNORED
-                    }
-                    script.requires.id.push(v)
-                    break
-                // requires package id
-                case "package":
-                    if(v in script.required.package) {
-                        console.warning(`Duplicate @requires '${val}' detected, ignored`)
-                        return Status.IGNORED
-                    }
-                    script.requires.package.push(val.substring(8))
-                    break
-                // requires url
-                default:
-                    if (!isValidURLPattern(val)) {
-                        console.error("Invalid @requires url '"+val+"'.")
-                        return Status.INVALID
-                    } 
-                    script.requires.url.push(val)
-                    break
-            }
-            return Status.SUCCESS
-        }
-    },
-    // Default parsing behavior to read and record a tag's value
-    defaultTagHandler : (tag) => {return function(val, script){
-        if (script.metadata[tag]) { // don't override existing tags
-            console.warning(`Duplicate @${tag} detected, ignored.`)
-            return Status.IGNORED
-        }
-        script.metadata[tag] = val
-        return Status.SUCCESS
-    }}
-}.addTags(["name", "author", "description", "icon", "package"]) 
+    }
+}
 
 const parser = {
     async readLocal(fp) {
@@ -186,7 +198,7 @@ const parser = {
     },
 }
 
-function isValidURLPattern(url) { 
+function matchURL(url) { 
     return url.match(regexMatchURL).length > 0 
 }
 
