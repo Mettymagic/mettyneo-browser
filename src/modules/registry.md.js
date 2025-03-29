@@ -20,12 +20,13 @@ const registry = {
             }
         )
     },
-    async clear() { return browser.storage.local.remove(this.key) },
+    async clear() { return browser.storage.local.remove(this.key).then(()=>{console.log("Successfully cleared script registry.")}) },
     
     // Async append
     async register(script) {
         try {
-            if(await this.has(script)) {
+            var stor = await this.storage
+            if(!await this.has(script)) {
                 stor[script.id] = script
                 return this.update(stor).then(() => {
                     console.log(`Script '${script.id}' registered.`)

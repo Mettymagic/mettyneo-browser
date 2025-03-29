@@ -1,11 +1,9 @@
 import Parser from "./modules/parser.md.js"
 import Registry from "./modules/registry.md.js"
 
-await Registry.clear()
-console.log(await Registry.storage)
-var script = await Parser.readLocal("src/scripts/core/neo-label.mn.js")
-console.log(script)
-if(!Registry.has(script.id)) Registry.register(script)
+//await Registry.clear()
+//var script = await Parser.readLocal("src/scripts/core/neo-label.mn.js")
+//if(!await Registry.has(script.id)) await Registry.register(script)
 
 
 //sends message to runtime, telling it to executeScript

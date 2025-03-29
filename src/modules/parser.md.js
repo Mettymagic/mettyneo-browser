@@ -20,13 +20,26 @@ const Status = Object.freeze({
 const metadataParser = {
     has(tag) { return tag in this.tags },
 
-    parseLine(script, tag, val) {
+    async parseLine(script, tag, val) {
         // skip if we don't read the tag
-        if (!this.has(tag)) return Status.IGNORED
-        const parser = tags[tag]
-        const v = parser.multiword ? this.trimValue(val) : val.trim()
-        const status = parser?.test(val) || Status.SUCCESS
+        if (!this.has(tag)) {
+            console.warn(`Unrecognised tag '@${tag}' ignored.`)
+            return Status.IGNORED
+        }
+        // skip if we've already read this tag, even if said tag was ignored
+        if (this.tags[tag].multitag != true && script.metadata[tag] === null) {
+            console.warn(`Duplicate tag '@${tag}' ignored.`)
+            return Status.IGNORED
+        }
+        // get info on how to read the tag
+        const parser = this.tags[tag]
+        // decide whether to read the full value or just the first word
+        const v = this.trimValue(tag, val)
+        // test if the value is valid for the tag
+        const status = parser.test ? await parser.test(v, script) : Status.SUCCESS
+        // if everything's good, set the script's metadata
         if (status == Status.SUCCESS) script.metadata[tag] = v
+        else if (status == Status.IGNORED && script.metadata[tag] === undefined) script.metadata[tag] = null 
         return status
     },
     
@@ -41,29 +54,35 @@ const metadataParser = {
             multiword: true
         },
         "icon" : {
-            test: metadataParser.matchURL(),
+            test: async (val, script) => { 
+                if (!matchURL(val)) {
+                    console.warn(`Invalid @icon value '${val}', ignored.`)
+                    return Status.IGNORED
+                }
+                return Status.SUCCESS
+            }
         }, 
         "package" : {},
         "id" : {
-            test: async (val) => {
+            test: async (val, script) => {
                 if (await registry.has(val)) {
-                    console.error("Invalid @id, ID is already used.")
+                    console.error(`Invalid @id value '${val}', ID is already used.`)
                     return Status.ERRORED
                 }
                 return Status.SUCCESS
             }
         },
         "version" : {
-            test: async (val) => { 
+            test: async (val, script) => { 
                 if (!regexVersion.test(val)) {
-                    console.error("Invalid @version number detected.")
+                    console.error(`Invalid @version number '${val}' detected.`)
                     return Status.ERRORED
                 }
                 return Status.SUCCESS
             },
         },
         "run-at": {
-            test: async (val) => {
+            test: async (val, script) => {
                 if (!regexRunAt.test(val)) {
                     console.error(`Invalid @run-at value '${val}' detected.`)
                     return Status.ERRORED
@@ -72,17 +91,18 @@ const metadataParser = {
             }
         },
         "match": {
-            test: async (val) => {
+            test: async (val, script) => {
                 if(!matchURL(val)) {
                     console.error(`Invalid @match url '${val}' detected.`)
                     return Status.ERRORED
                 }
                 if(val in script.match) {
-                    console.warning(`Duplicate @match url '${val}' detected, ignored.`)
+                    console.warning(`@match url '${val}' already registered, ignored duplicate.`)
                     return Status.IGNORED
                 }
                 return Status.SUCCESS
-            }
+            },
+            multitag : true
         },
         "requires": {
             test: async (val, script) => {
@@ -92,39 +112,43 @@ const metadataParser = {
                 switch(k) {
                     // requires script id
                     case "id":
-                        if(v in script.required.id) {
-                            console.warning(`Duplicate @requires '${val}' detected, ignored`)
+                        if(v in script.requires.id) {
+                            console.warning(`@requires '${val}' already registered, ignored duplicate.`)
                             return Status.IGNORED
                         }
                         break
                     // requires package id
                     case "package":
-                        if(v in script.required.package) {
-                            console.warning(`Duplicate @requires '${val}' detected, ignored`)
+                        if(v in script.requires.package) {
+                            console.warning(`@requires '${val}' already registered, ignored duplicate.`)
                             return Status.IGNORED
                         }
                         break
                     // requires url
                     default:
                         if (!matchURL(val)) {
-                            console.error("Invalid @requires url '"+val+"'.")
+                            console.error(`Invalid @requires url '${val}'.`)
                             return Status.INVALID
-                        } 
+                        }
+                        if (v in script.requires.url) {
+                            console.warning(`@requires '${val}' already registered, ignored duplicate.`)
+                        }
                         break
                 }
                 return Status.SUCCESS
-            }
+            },
+            multitag : true
         }
     },
 
     trimValue(tag, val) {
         const noComment = val.replace(/\s+\/\/.*/gm, "")
-        if (this.strTags.includes(tag)) return noComment
-        else {
+        if(this.tags[tag].multiword != true) {
             var split = noComment.split(/(\s+)/)
             if (split.length > 1) console.warn(`Tag @${tag} contains more than 1 word, other words ignored.`)
             return split[0]
         }
+        return noComment
     }
 }
 
@@ -140,7 +164,7 @@ const parser = {
     },
 
     // Turns a string representing a script file's content into a Script object, or null on error
-    parseScript(text) {
+    async parseScript(text) {
         const m = text.match(regexHeader)
         if (m == null || m.length != 5) {
             console.error(`Error: Invalid or missing header in script "${name}"!`)
@@ -152,54 +176,44 @@ const parser = {
         }
 
         const script = new Script()
-        script.content = m[4]
-
-        let header = m[1]
-        const tag = m[2]
-        // limited cross-compatibility with existing tampermonkey scripts
-        var status
-        if (tag == "Userscript") status = this.parseTampermonkey(header, script)
-        else status = this.parseHeader(header, script)
-        if(!status) {
+        const header = m[1]
+        //const tag = m[2]
+        //if (tag == "Userscript") var success = this.parseTampermonkey(header, script)
+        //else success = this.parseHeader(header, script)
+        if(!(await this.parseHeader(header, script))) {
             console.error("Script could not be read.")
             return null
         }
+        script.content = m[4]
         return script
     },
 
     // Reads the header for any metadata instructions surrounding the script and inserts it into the script object
     // Returns true if successful, false if errored
-    parseHeader(header, script) {
+    async parseHeader(header, script) {
         const lines = header.matchAll(regexData)
         // extracts data from any tags
+        var j = 0
+        var i = 0
         for (const line of lines) {
             const tag = line[1].substring(1)
-            if (!metadataParser.has(tag)) {
-                console.warn(`Unrecognised tag '@${tag}', ignored.`)
-                continue
-            }
-            const val = metadataParser.trimValue(tag, line[2])
+            const val = line[2]
             // TODO error/warning reporting that is visual to the user ala tampermonkey
-            const status = metadataParser.tags[tag](val, script)
+            const status = await metadataParser.parseLine(script, tag, val)
             if (status == Status.ERRORED) {
                 console.error("Fatal error parsing script header, process aborted.")
                 return false
             }
+            if (status == Status.SUCCESS) i += 1
+            j += 1
         }
+        console.log(`Successfully parsed ${i}/${j} header values.`)
         return true
-    },
-
-    // replaces Tampermonkey syntax with MettyNeo syntax
-    parseTampermonkey(header, script) {
-        let compatHeader = header
-        let compatScript = script//.replace
-        // TODO replace functions here
-        return this.parseHeader(compatHeader, script)
-    },
+    }
 }
 
 function matchURL(url) { 
-    return url.match(regexMatchURL).length > 0 
+    return url?.match(regexMatchURL)?.length > 0  || false
 }
 
 export {parser as default, metadataParser}
